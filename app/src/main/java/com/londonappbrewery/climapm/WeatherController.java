@@ -7,6 +7,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.preference.PreferenceActivity;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -14,6 +15,15 @@ import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.json.JSONObject;
+
+import cz.msebera.android.httpclient.Header;
 
 
 public class WeatherController extends AppCompatActivity {
@@ -22,7 +32,7 @@ public class WeatherController extends AppCompatActivity {
     final int REQUEST_CODE = 123;
     final String WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather";
     // App ID to use OpenWeather data
-    final String APP_ID = "e72____PLEASE_REPLACE_ME_____13";
+    final String APP_ID = "dd146e552dfd88bbbba6cd96ad78e87a";
     // Time between location updates (5000 milliseconds or 5 seconds)
     final long MIN_TIME = 5000;
     // Distance between location updates (1000m or 1km)
@@ -77,7 +87,17 @@ public class WeatherController extends AppCompatActivity {
         MyLocationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                Log.d("Clima", "onLocationCjanged() callback received-");
+                Log.d("Clima", "onLocationChanged() callback received-");
+                String longitude =String.valueOf(location.getLongitude());
+                String latitude = String.valueOf(location.getLatitude());
+                Log.d("Clima", "Longitude is: " + longitude);
+                Log.d("Clima", "Latitude is: " + latitude);
+
+                RequestParams params = new RequestParams();
+                params.put("lat", latitude);
+                params.put("lon", longitude);
+                params.put("appid", APP_ID);
+                letsDoSomeNetworking(params);
             }
 
             @Override
@@ -95,7 +115,7 @@ public class WeatherController extends AppCompatActivity {
                 Log.d("Clima", "onProviderDisabled() callback received.");
             }
         };
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -113,17 +133,35 @@ public class WeatherController extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == REQUEST_CODE){
+        if (requestCode == REQUEST_CODE) {
 
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.d("Clima", "onRequestPermissionsResult(): Permission granted.");
                 getWeatherForCurrentLocation();
-        } else {
+            } else {
                 Log.d("Clima", "Permission denied =(");
             }
+        }
     }
+
     // TODO: Add letsDoSomeNetworking(RequestParams params) here:
-        // Luento jäi kohtaan 9:36
+        private void letsDoSomeNetworking(RequestParams params) {
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.get(WEATHER_URL, params, new JsonHttpResponseHandler(){
+
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response){
+                    Log.d("Clima", "Success! JSON response: " + response.toString());
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable e, JSONObject response){
+                    Log.e("Clima", "Fail" + e.toString());
+                    Log.d("Clima", "Status code: " + statusCode);
+                    Toast.makeText(WeatherController.this, "Request Failed!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
 
     // TODO: Add updateUI() here:
@@ -134,4 +172,4 @@ public class WeatherController extends AppCompatActivity {
 
 
 
-}}
+}
